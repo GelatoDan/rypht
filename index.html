@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Asteroids with Portal</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: black; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Asteroid {
+            constructor() {
+                this.size = Math.random() * 30 + 20;
+                this.spawn();
+            }
+            
+            spawn() {
+                const side = ["top", "bottom", "left", "right"][Math.floor(Math.random() * 4)];
+                if (side === "top") {
+                    this.x = Math.random() * canvas.width;
+                    this.y = 0;
+                } else if (side === "bottom") {
+                    this.x = Math.random() * canvas.width;
+                    this.y = canvas.height;
+                } else if (side === "left") {
+                    this.x = 0;
+                    this.y = Math.random() * canvas.height;
+                } else {
+                    this.x = canvas.width;
+                    this.y = Math.random() * canvas.height;
+                }
+                let angle = Math.atan2(canvas.height / 2 - this.y, canvas.width / 2 - this.x);
+                this.dx = Math.cos(angle) * 1;
+                this.dy = Math.sin(angle) * 1;
+            }
+            move() {
+                this.x += this.dx;
+                this.y += this.dy;
+            }
+            draw() {
+                ctx.fillStyle = "white";
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Portal {
+            constructor() {
+                this.active = false;
+                this.x = null;
+                this.y = null;
+            }
+            open(x, y) {
+                this.active = true;
+                this.x = x;
+                this.y = y;
+            }
+            close() {
+                this.active = false;
+            }
+            draw() {
+                if (this.active) {
+                    ctx.strokeStyle = "red";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 50, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        const asteroids = [];
+        for (let i = 0; i < 5; i++) asteroids.push(new Asteroid());
+        const portal = new Portal();
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = "white";
+            ctx.fillRect(canvas.width / 2 - 20, canvas.height / 2 - 20, 40, 40);
+            
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                asteroids[i].move();
+                asteroids[i].draw();
+                if (portal.active && Math.hypot(asteroids[i].x - portal.x, asteroids[i].y - portal.y) < 50) {
+                    asteroids.splice(i, 1);
+                    asteroids.push(new Asteroid());
+                }
+            }
+            
+            portal.draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        canvas.addEventListener("mousedown", (event) => {
+            portal.open(event.clientX, event.clientY);
+        });
+        
+        document.addEventListener("keyup", (event) => {
+            if (event.code === "Space") portal.close();
+        });
+        
+        gameLoop();
+    </script>
+</body>
+</html>
